@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-ui@2.15.6/lib/theme-chalk/index.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        .date-note-num {
+            background-color: #2a5bb9;
+            display: flex;
+            justify-content: center;
+            padding: 2px 7px;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+<div id="app" style="display: flex">
+    <el-calendar v-model="date" style="width: 45%;">
+        <template
+                slot="dateCell"
+                slot-scope="{date, data}">
+            <div style="display: flex">
+                <div style="flex: 1">
+                    <span>{{moment(date).format('DD')}}</span>
+                </div>
+                <div v-if="dateNoteNum(date)>0" :class="{'date-note-num':dateNoteNum(date)>0}">
+                    <span v-text="dateNoteNum(date)"></span>
+                </div>
+            </div>
+        </template>
+    </el-calendar>
+    <div style="display: flex;flex-direction: column;margin-left: 10px">
+        <el-pagination
+                background
+                layout="prev, pager, next"
+                :page-count="pageCount"
+                :hide-on-single-page="false"
+                style="margin-top: 10px"
+                @current-change="currentChange"
+                :current-page.sync="currentPage"
+        >
+        </el-pagination>
+        <el-table
+                :data="tableData"
+                border
+        style="margin-top: 10px">
+            <el-table-column
+                    prop="english"
+                    label="英语">
+            </el-table-column>
+            <el-table-column
+                    prop="chinese"
+                    label="中文">
+            </el-table-column>
+        </el-table>
+    </div>
+
+</div>
+<script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/element-ui@2.15.6/lib/index.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios@0.24.0/dist/axios.js"></script>
+<script>
+
+    Vue.prototype.moment = moment
+    const vm = new Vue({
+        el: '#app',
+        data: {
+            date: new Date(),
+            nums: [],
+            pageCount: 0,
+            tableData: [],
+            currentPage: 0
+        },
+        mounted() {
+            axios.get('/api/dateNoteNums').then(res => {
+                this.nums = res.data ?? []
+                this.pageCount = this.dateNoteNum(this.date)
+                if (this.pageCount > 0){
+                    this.currentPage = 1
+                }else{
+                    this.currentPage = undefined
+                }
+            })
+        },
+        methods: {
+            dateNoteNum(date) {
+                return this.nums?.find(item => item.date === moment(date).format('YYYY-MM-DD'))?.num
+            },
+            currentChange(val){
+            }
+        },
+        watch: {
+            date:{
+                handler(date) {
+                    this.pageCount = this.dateNoteNum(date)
+                    if (this.pageCount && this.pageCount > 0){
+                        this.currentPage = 1
+                    }else{
+                        this.currentPage = undefined
+                    }
+                },
+            }
+        }
+    })
+
+</script>
+</body>
+</html>
